@@ -1,0 +1,12 @@
+void setup() {
+  size(600, 900);
+  background(230);
+  // background(#11cf55);
+  strokeWeight(1);
+}
+
+void draw() {
+}
+void mousePressed() {
+  rect(mouseX-25, mouseY-25, 50, 50);
+}

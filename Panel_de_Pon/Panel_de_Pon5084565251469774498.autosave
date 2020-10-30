@@ -1,0 +1,47 @@
+/// TODO:
+/// textを描画させる
+/// せり上げボタンの配置を決める。
+
+
+int PANEL_SIZE=50;
+int cx=250;
+int cy=250;
+
+void setup() {
+  size(600, 900);
+  background(230);
+  // background(#11cf55);
+  strokeWeight(1);
+  PFont font;
+  font = loadFont("MeiryoUI-48.vlw");
+  PImage cursol=loadImage("../../img/cursol.png");
+
+  stage();
+}
+
+void draw() {
+}
+void mousePressed() {
+}
+
+void stage() {
+  background(230);    
+  for (int j=0; j<12; j++) {
+    for (int i=0; i<6; i++) {
+      rect(80+PANEL_SIZE*i, 300+PANEL_SIZE*j, PANEL_SIZE, PANEL_SIZE);
+    }
+  }
+  //   println("("+mouseX+", "+mouseY+")");
+  txt();
+  image(cursol, cx, cy, 134, 76);
+}
+
+void txt() {
+  fill(#ff55dd);
+  textSize(48);
+  text("TIME: 0:00'00''00\nHIGH SCORE: 0\n  SCORE: 0", 80, 80);
+  //   println("("+mouseX+", "+mouseY+")");
+}
+
+void keyPressed() {
+}
