@@ -1,6 +1,7 @@
 /// TODO:
 /// 落下の際のバグ　2行で点滅しているパネル(3個と3個など)　に落下する
 /// 新しいパネル生成　よりよい乱数 -> 3つ連続で同じパネルが出現することもある。
+/// 連鎖の判定
 /// せり上げボタンの配置を決める。
 /// スコアとタイム、ポーズ・リセット、開始前のカウントダウン
 /// パネルを消すアルゴリズム(横の判定 -> 縦の判定、上から見ていく)
@@ -50,7 +51,8 @@ final int MARGIN_X = 80;
 final int MARGIN_Y = 275;
 final int FRAME_RATE=60;
 final boolean DEBUG =true;
-PImage cursol;
+final int FALL_SPEED_PER_FR=3; // 落下速度を決める
+PImage cursor;
 int cx = MARGIN_X - 5 + PANEL_SIZE * 2;
 int cy = MARGIN_Y - 5 + PANEL_SIZE * 6;
 
@@ -76,11 +78,18 @@ int[][] cells = new int[13][6];
 // cells == 70     : 消えた
 // cells == 80     : 落下
 // cells == 90     : 落下し終わる
+int[][] cells_chain = new int[13][6]; // 連鎖数を格納
 
 boolean pcf;// Panel Changed Flag
 boolean up, down, left, right;
+boolean ccf=false; // chains changed flag 連鎖が増えたときtrue
+boolean manualflag; // 手動でパネルを動かしたらtrue(連鎖の判定で用いる)
+boolean startflag=false;
 
 int timer=0;
+int chains=0; // 連鎖
+static int score=0;
+int highscore=500;
 
 int arrtime; // 揃ってから消すまでインクリメント
 
@@ -88,11 +97,11 @@ void setup() {
   size(600, 900);
   background(230);
   // background(#11cf55);
-  frameRate(30);
+  frameRate(FRAME_RATE);
   strokeWeight(1);
   PFont font;
   font = loadFont("MeiryoUI-48.vlw");
-  cursol = loadImage("cursol.png");
+  cursor = loadImage("cursor.png");
   panels[0] = loadImage("panel0.png");
   panels[1] = loadImage("panel1.png");
   panels[2] = loadImage("panel2.png");
@@ -121,7 +130,13 @@ void setup() {
 
 void draw() {
   stage();
+  startflag=true;
+  if (frameCount>FRAME_RATE*4){
+    startflag=true;
+  }
+  if(startflag){
   checkPanel();
+  }
 }
 
 void mousePressed() {
@@ -133,7 +148,8 @@ void mousePressed() {
       println("("+panelX+", "+panelY+")");
       // println("cells_img["+panelY+"]["+panelX+"] = "+cells_img[panelY][panelX]);
       println("cells_type["+panelY+"]["+panelX+"] = "+cells_type[panelY][panelX]);
-      println("cells["+panelY+"]["+panelX+"] = "+cells[panelY][panelX]+"\n");
+      println("cells["+panelY+"]["+panelX+"] = "+cells[panelY][panelX]);
+      println("cells_chain["+panelY+"]["+panelX+"] = "+cells_chain[panelY][panelX]+"\n");
     }
   }
 }
@@ -151,17 +167,48 @@ void stage() {
   placePanel();
   fill(0, 0, 0, 127);
   rect(MARGIN_X, MARGIN_Y+PANEL_SIZE*12, PANEL_SIZE*6, PANEL_SIZE);
-  image(cursol, cx, cy, PANEL_SIZE * 2 * 1.12, PANEL_SIZE * 1.22);
+  image(cursor, cx, cy, PANEL_SIZE * 2 * 1.12, PANEL_SIZE * 1.22);
 }
 
 void txt() {
   fill(#ff55dd);
   textSize(48);
-  text("TIME: 0:00'00''00\nHIGH SCORE: 0\n  SCORE: 0", 80, 80);
+  text("TIME: 0:00'00''00\nHIGH SCORE: "+highscore+"\n  SCORE: "+score, 80, 80);
   //   println("("+mouseX+", "+mouseY+")");
 }
 
 void checkPanel() {
+  for (int y=1; y<12; y++) {
+    for (int x=0; x<6; x++) {
+      // 落下 
+      // 1つ上で点滅しているとき、点滅してるパネルは落下しない
+      if (cells[y][x]==70) {
+        if (!(0<cells[y+1][x]&&cells[y+1][x]<70)&&frameCount%FALL_SPEED_PER_FR==0) {
+          int tmp_cell;
+          tmp_cell=cells[y][x];
+          // cells[y][x]=cells[y+1][x];
+          cells[y+1][x]=tmp_cell;
+          int tmp_cell_type;
+          tmp_cell_type=cells_type[y][x];
+          cells_type[y][x]=cells_type[y+1][x];
+          cells_type[y+1][x]=tmp_cell_type;
+          PImage tmp_cell_img;
+          tmp_cell_img=cells_img[y][x];
+          cells_img[y][x]=cells_img[y+1][x];
+          cells_img[y+1][x]=tmp_cell_img;
+          if ((cells[y-1][x]<=60||cells[y-1][x]==80) && cells_img[y][x]!=panels[0]&&(cells[y][x]==70)) {
+            cells[y][x]=80; // 落下し終わった
+          }
+        }
+      }
+    }
+  }
+  // 落下し終わったか
+  for (int y=1; y<12; y++) {
+    for (int x=0; x<6; x++) {
+    }
+  }
+  // 横で揃っているか
   for (int y=12; y>0; y--) {
     for (int x=0; x<4; x++) {
       if (cells_type[y][x]!=0&&cells_img[y][x]==cells_img[y][x+1] && (cells[y][x]<=1||cells[y][x]==80)&& (cells[y][x+1]<=1||cells[y][x+1]==80)) {
@@ -173,6 +220,7 @@ void checkPanel() {
       }
     }
   }
+  // 縦で揃っているか
   for (int x=0; x<6; x++) {
     for (int y=12; y>2; y--) {
       if (cells_type[y][x]!=0&&cells_img[y][x]==cells_img[y-1][x]&& (cells[y][x]<=1||cells[y][x]==80)&& (cells[y-1][x]<=1||cells[y-1][x]==80)) {
@@ -185,12 +233,22 @@ void checkPanel() {
     }
   }
 
-  int dp=0;
+  int combo=0;
+  ccf=false;
   for (int y=12; y>0; y--) {
     for (int x=0; x<6; x++) {
       // 揃ったパネルの数を数える
       if (cells[y][x]==1) {
-        dp+=1;
+        combo+=1;
+        // if (!manualflag) {
+        if (ccf) {
+          cells_chain[y][x]=chains;
+        } else {
+          cells_chain[y][x]=chains+1;
+          chains=cells_chain[y][x];
+          ccf=true;
+        }
+        // }
       }
       // 揃ったときの時間猶予　点滅エフェクト向け
       if (cells[y][x]>0&&cells[y][x]<FRAME_RATE+1) {
@@ -211,33 +269,86 @@ void checkPanel() {
       }
     }
   }
-  if (dp!=0) {
-    println(dp);
-  }
-  for (int y=1; y<12; y++) {
-    for (int x=0; x<6; x++) {
-      // 落下 
-      // 1つ上で点滅しているとき、点滅してるパネルは落下しない
-      if (cells[y][x]==70) {
-        if (!(0<cells[y+1][x]&&cells[y+1][x]<70)) {
-          int tmp_cell;
-          tmp_cell=cells[y][x];
-          // cells[y][x]=cells[y+1][x];
-          cells[y+1][x]=tmp_cell;
-          int tmp_cell_type;
-          tmp_cell_type=cells_type[y][x];
-          cells_type[y][x]=cells_type[y+1][x];
-          cells_type[y+1][x]=tmp_cell_type;
-          PImage tmp_cell_img;
-          tmp_cell_img=cells_img[y][x];
-          cells_img[y][x]=cells_img[y+1][x];
-          cells_img[y+1][x]=tmp_cell_img;
-          if ((cells[y-1][x]<=60||cells[y-1][x]==80) && cells_img[y][x]!=panels[0]&&(cells[y][x]==70)) {
-            cells[y][x]=80; // 落下し終わった
-          }
-        }
+  for (int x=0; x<6; x++) {
+    boolean fallflag=false;
+    for (int y=1; y<=12; y++) {
+      // 揃ったパネルから上を連鎖可能性リストに
+      if (cells[y][x]==70 ) {
+        fallflag=true;
+      }
+      // if(!ccf){
+      //   ccf=true;
+      //   chains+=1;
+      // }
+      if (fallflag) {
+        cells_chain[y][x]=chains+1;
       }
     }
+  }
+
+  if (combo==0) {
+    // 消えるパネルがないとき、
+    boolean isDeleting=false;
+    for (int y=1; y<=12; y++) {
+      for (int x=0; x<6; x++) {
+        // パネルが消えてる途中か落下中か
+        if ((0<cells[y][x]&&cells[y][x]<70)||cells[y][x]==80) {
+          isDeleting=true;
+          break;
+        } else {
+        }
+        // if (chains>0) {
+        // }
+        // if (cells[y][x]==80) {
+        //   cells[y][x]=0;
+        // }
+        // if(cells[y][x]==70 && cells_type[y][x]==0){
+        //   cells[y][x]=0;
+        // }
+        if (x==5&&y==12) {
+          chains=0;
+          isDeleting=false;
+        }
+      }
+      if (isDeleting) {
+        // println("途切れる"+y);
+        break;
+      }
+    }
+  } else {
+    // chains+=1;
+    for (int y=1; y<12; y++) {
+      for (int x=0; x<6; x++) {
+        // 連鎖チェック
+        // if (chains>0) {
+        // }
+        if (cells[y][x]==80) {
+          cells[y][x]=0;
+        }
+        // if(cells[y][x]==70 && cells_type[y][x]==0){
+        //   cells[y][x]=0;
+        // }
+      }
+    }
+  }
+
+  // 後処理
+  for (int y=12; y>0; y--) {
+    for (int x=0; x<6; x++) {
+      if (cells_img[y][x]==panels[0]&&cells_type[y][x]!=0&&!(0<cells[y][x]&&cells[y][x]<70)) {
+        cells_type[y][x]=0;
+      }
+      // if (chains==0&&(true)) {
+      //   cells_chain[y][x]=0;
+      // }
+    }
+  }
+  if (combo!=0) {
+    score+=calculateScore(chains, combo);
+    if (highscore<score){
+      highscore=score;
+    }
+    println(chains+"連鎖 "+combo+"同時消し");
   }
 }
 
@@ -264,6 +375,10 @@ void keyPressed() {
       if (!pcf) {
         // パネルのせり上げ
         generatePanel();
+        if (cy>=MARGIN_Y) {
+          cy-=PANEL_SIZE;
+        }
+        manualflag=true;
         pcf=true;
       }
     }
@@ -285,9 +400,23 @@ void keyPressed() {
         cells[getCursolY()][getCursolX()] = cells[getCursolY()][getCursolX() + 1];
         cells[getCursolY()][getCursolX() + 1] = tmp_cell;
 
+        manualflag=true;
         pcf = true;
       }
     }
+  }
+  else if(key=='2'&&DEBUG){
+    // 4秒経過したら消える
+    // 連鎖用表示設定
+    fill(0, 166, 212);
+    textSize(100);
+    text(int(random(3,15)), MARGIN_X+PANEL_SIZE*7,MARGIN_Y+PANEL_SIZE);
+    
+    // 同時消し用表示設定
+    fill(255, 125, 0);
+    textSize(100);
+    text(int(random(3,15)), MARGIN_X+PANEL_SIZE*7,MARGIN_Y+PANEL_SIZE);
+    
   }
 }
 
@@ -320,6 +449,7 @@ void generatePanel() {
       cells_img[y][x] = cells_img[y-1][x];
       cells_type[y][x]=cells_type[y-1][x];
       cells[y][x]=cells[y-1][x];
+      cells_chain[y][x]=cells_chain[y-1][x];
     }
   }
   for (int x=0; x<6; x++) {
@@ -327,7 +457,38 @@ void generatePanel() {
     cells_img[0][x] =panels[new_panel[x]];
     cells_type[0][x]=new_panel[x];
     cells[0][x]=0;
+    cells_chain[0][x]=0;
   }
+}
+
+int calculateScore(int chains, int combo) {
+  int rtn=0;
+  // 連鎖分だけ加算
+  switch (chains) {
+  case 0:break;
+  case 1:break;
+  case 2:rtn+=50;break;
+  case 3:rtn+=80;break;
+  case 4:rtn+=150;break;
+  case 5:rtn+=300;break;
+  case 6:rtn+=400;break;
+  case 7:rtn+=500;break;
+  case 8:rtn+=700;break;
+  case 9:rtn+=900;break;
+  case 10:rtn+=1100;break;
+  case 11:rtn+=1300;break;
+  case 12:rtn+=1500;break;
+  default:rtn+=1800;break;
+  }
+
+  // 同時消しの分だけ加算
+  if (combo==3){
+    rtn+=30;
+  }else{
+  rtn+=5*(combo-3)*(combo+24);// -10*combo+10*combo;
+  }
+
+  return rtn;
 }
 
 int getCursolX() {
