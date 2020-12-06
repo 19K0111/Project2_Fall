@@ -1,0 +1,25 @@
+class Timer{
+    private int h;
+    private int m;
+    private int s;
+    private int ms;
+
+    public int start;
+    public int current;
+    Timer(int hour, int minute, int second, int millisecond){
+        this.h=hour;
+        this.m=minute;
+        this.s=second;
+        this.ms=millisecond;
+        this.start=0;
+        this.current=0;
+    }
+
+    public String toString(){
+        int cur_h=hour()-h;
+        int cur_m=minute()-m;
+        int cur_s=second()-s;
+        int cur_ms=millis()-ms;
+        return cur_h+":"+cur_m+":"+cur_s+"\'"+cur_ms;
+    }
+}
