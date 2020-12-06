@@ -1,6 +1,7 @@
 /// TODO:
-/// 落下の際のバグ　2行で点滅しているパネル(3個と3個など)　に落下する
+/// 落下の際のバグ　空中で判定してしまう
 /// 新しいパネル生成　よりよい乱数 -> 3つ連続で同じパネルが出現することもある。
+/// 縦のパネルの数に応じてステージの色を変える(縦10個:黄色、縦11個:オレンジ、縦12個:赤)
 /// 連鎖の判定
 /// せり上げボタンの配置を決める。
 /// スコアとタイム、ポーズ・リセット、開始前のカウントダウン
@@ -21,6 +22,8 @@
 /// cellsが60くらいになったら消す
 /// 
 /// 落下のアルゴリズム -> 下から見ていく -> 見ているパネルが透明-> 1つ上のパネルを下に(1つ上のパネルと交換)
+/// 
+/// 全消しボーナス：1500(GBA), 3000(DS)
 /// 
 /// 基本消し : 30
 /// 同時消し4 : 100+40
@@ -52,6 +55,7 @@ final int MARGIN_Y = 275;
 final int FRAME_RATE=60;
 final boolean DEBUG =true;
 final int FALL_SPEED_PER_FR=3; // 落下速度を決める
+final String PERFECT_TEXT="Perfect";
 PImage cursor;
 int cx = MARGIN_X - 5 + PANEL_SIZE * 2;
 int cy = MARGIN_Y - 5 + PANEL_SIZE * 6;
@@ -85,11 +89,20 @@ boolean up, down, left, right;
 boolean ccf=false; // chains changed flag 連鎖が増えたときtrue
 boolean manualflag; // 手動でパネルを動かしたらtrue(連鎖の判定で用いる)
 boolean startflag=false;
+boolean gameover;
+boolean zerobonus;
 
 int timer=0;
 int chains=0; // 連鎖
 static int score=0;
-int highscore=500;
+int highscore;
+int fieldpanels=0;
+
+Timer gameTimer;
+int h;
+int m;
+int s;
+int millsec;
 
 int arrtime; // 揃ってから消すまでインクリメント
 
@@ -113,6 +126,7 @@ void setup() {
   // panel3=loadImage("panel3.png");
   // panel4=loadImage("panel4.png");
   // panel5=loadImage("panel5.png");
+  timer=0;
   for (int y = 12; y >= 0; y--) {
     for (int x = 0; x < 6; x++) {
       // パネルの初期化 それぞれに空のパネルを配置
@@ -126,16 +140,41 @@ void setup() {
       cells_type[y][x]=(x + y) % 5 + 1;
     }
   }
+  try {
+    highscore=int(loadStrings("endless")[0]);
+  } 
+  catch (Exception e) {
+    //TODO: handle exception
+    println(e);
+  }
 }
 
 void draw() {
   stage();
   startflag=true;
-  if (frameCount>FRAME_RATE*4){
+  if (frameCount>FRAME_RATE*4) {
     startflag=true;
   }
-  if(startflag){
-  checkPanel();
+  if (startflag&&timer==0) {
+    gameTimer=new Timer(timer, FRAME_RATE, 0, 1, 5);
+    gameTimer.start();
+  }
+  if (gameover) {
+    gameTimer.stop();
+    fill(0);
+    textSize(105);
+    text("GAME\nOVER", MARGIN_X, MARGIN_Y+PANEL_SIZE*3+sin(frameCount/(FRAME_RATE/3))*PANEL_SIZE/2);
+  }
+  if (startflag) {
+    checkPanel();
+    timer+=1;
+    // println(gameTimer.toString());
+    // h=hour();
+    // m=minute();
+    // s=second();
+    // millsec=millis();
+    // String timetostring=h+":"+m+":"+s+"\'"+millsec;
+    // println(timetostring);
   }
 }
 
@@ -163,6 +202,22 @@ void stage() {
     }
   }
   //   println("("+mouseX+", "+mouseY+")");
+  switch (getMaxPanelHeight()) {
+  case 10:
+    fill(255, 255, 0, 127);
+    break;
+  case 11:
+    fill(255, 140, 0, 127);      
+    break;
+  case 12:
+    fill(178, 34, 34, 127);    
+    break;
+
+  default:
+    fill(255);
+    break;
+  }
+  rect(MARGIN_X, MARGIN_Y, PANEL_SIZE*6, PANEL_SIZE*12);
   txt();
   placePanel();
   fill(0, 0, 0, 127);
@@ -173,11 +228,22 @@ void stage() {
 void txt() {
   fill(#ff55dd);
   textSize(48);
-  text("TIME: 0:00'00''00\nHIGH SCORE: "+highscore+"\n  SCORE: "+score, 80, 80);
+  if (gameTimer==null) {
+    text("TIME: 0:00'00''00\nHIGH SCORE: "+highscore+"\n  SCORE: "+score, 80, 80);
+  } else {
+    text("TIME: "+gameTimer.toString()+"\nHIGH SCORE: "+highscore+"\n  SCORE: "+score, 80, 80);
+  }
   //   println("("+mouseX+", "+mouseY+")");
 }
 
 void checkPanel() {
+  for (int y=1; y<12; y++) {
+    for (int x=0; x<6; x++) {
+      if (cells_img[y][x]==panels[0]&&!(0<cells[y][x]&&cells[y][x]<70)) {
+        cells[y][x]=70;
+      }
+    }
+  }
   for (int y=1; y<12; y++) {
     for (int x=0; x<6; x++) {
       // 落下 
@@ -186,7 +252,7 @@ void checkPanel() {
         if (!(0<cells[y+1][x]&&cells[y+1][x]<70)&&frameCount%FALL_SPEED_PER_FR==0) {
           int tmp_cell;
           tmp_cell=cells[y][x];
-          // cells[y][x]=cells[y+1][x];
+          cells[y][x]=cells[y+1][x];
           cells[y+1][x]=tmp_cell;
           int tmp_cell_type;
           tmp_cell_type=cells_type[y][x];
@@ -211,8 +277,8 @@ void checkPanel() {
   // 横で揃っているか
   for (int y=12; y>0; y--) {
     for (int x=0; x<4; x++) {
-      if (cells_type[y][x]!=0&&cells_img[y][x]==cells_img[y][x+1] && (cells[y][x]<=1||cells[y][x]==80)&& (cells[y][x+1]<=1||cells[y][x+1]==80)) {
-        if (cells_img[y][x]==cells_img[y][x+2]&&(cells[y][x+2]<=1||cells[y][x+2]==80)) {
+      if (cells_type[y][x]!=0&&cells_img[y][x]==cells_img[y][x+1] && (cells[y][x]<=1||cells[y][x]==80)&& (cells[y][x+1]<=1||cells[y][x+1]==80&&frameCount%FALL_SPEED_PER_FR==0)) {
+        if (cells_img[y][x]==cells_img[y][x+2]&&(cells[y][x+2]<=1||cells[y][x+2]==80&&frameCount%FALL_SPEED_PER_FR==0)) {
           cells[y][x]=1;
           cells[y][x+1]=1;
           cells[y][x+2]=1;
@@ -223,8 +289,8 @@ void checkPanel() {
   // 縦で揃っているか
   for (int x=0; x<6; x++) {
     for (int y=12; y>2; y--) {
-      if (cells_type[y][x]!=0&&cells_img[y][x]==cells_img[y-1][x]&& (cells[y][x]<=1||cells[y][x]==80)&& (cells[y-1][x]<=1||cells[y-1][x]==80)) {
-        if (cells_img[y][x]==cells_img[y-2][x]&& (cells[y-2][x]<=1||cells[y-2][x]==80)) {
+      if (cells_type[y][x]!=0&&cells_img[y][x]==cells_img[y-1][x]&& (cells[y][x]<=1||cells[y][x]==80)&& (cells[y-1][x]<=1||cells[y-1][x]==80&&frameCount%FALL_SPEED_PER_FR==0)) {
+        if (cells_img[y][x]==cells_img[y-2][x]&& (cells[y-2][x]<=1||cells[y-2][x]==80&&frameCount%FALL_SPEED_PER_FR==0)) {
           cells[y][x]=1;
           cells[y-1][x]=1;
           cells[y-2][x]=1;
@@ -332,11 +398,37 @@ void checkPanel() {
     }
   }
 
+  // 全消し判定
+  fieldpanels=0;
+  for (int y=12; y>0; y--) {
+    for (int x=0; x<6; x++) {
+      if (cells_img[y][x]==panels[0]&&cells_type[y][x]!=0&&!(0<cells[y][x]&&cells[y][x]<70)) {
+        cells_type[y][x]=0;
+      }
+      if (cells_img[y][x]!=panels[0]) {
+        fieldpanels+=1;
+      }
+      // if (chains==0&&(true)) {
+      //   cells_chain[y][x]=0;
+      // }
+    }
+  }
+  if (fieldpanels==0&&!zerobonus) {
+    zerobonus=true;
+    score+=3000;
+  } else   if (zerobonus) {    
+    fill(60, 179, 113);
+    textSize(100);
+    text(PERFECT_TEXT, MARGIN_X, MARGIN_Y+PANEL_SIZE*3);
+  }
   // 後処理
   for (int y=12; y>0; y--) {
     for (int x=0; x<6; x++) {
       if (cells_img[y][x]==panels[0]&&cells_type[y][x]!=0&&!(0<cells[y][x]&&cells[y][x]<70)) {
         cells_type[y][x]=0;
+      }
+      if (cells_img[y][x]!=panels[0]) {
+        fieldpanels+=1;
       }
       // if (chains==0&&(true)) {
       //   cells_chain[y][x]=0;
@@ -345,7 +437,7 @@ void checkPanel() {
   }
   if (combo!=0) {
     score+=calculateScore(chains, combo);
-    if (highscore<score){
+    if (highscore<score) {
       highscore=score;
     }
     println(chains+"連鎖 "+combo+"同時消し");
@@ -375,48 +467,48 @@ void keyPressed() {
       if (!pcf) {
         // パネルのせり上げ
         generatePanel();
-        if (cy>=MARGIN_Y) {
-          cy-=PANEL_SIZE;
+        if (!gameover) {
+          if (cy>=MARGIN_Y) {
+            cy-=PANEL_SIZE;
+          }
+          manualflag=true;
+          pcf=true;
         }
-        manualflag=true;
-        pcf=true;
       }
     }
   } else if (key == ENTER || key == ' ') {
     // パネルの交換
     if (!pcf) {
-      if ((cells[getCursolY()][getCursolX()]==0||cells[getCursolY()][getCursolX()]==70||cells[getCursolY()][getCursolX()]==80)&&(cells[getCursolY()][getCursolX()+1]==0||cells[getCursolY()][getCursolX()+1]==70||cells[getCursolY()][getCursolX()+1]==80)) {
+      if ((cells[getCursorY()][getCursorX()]==0||cells[getCursorY()][getCursorX()]==70||cells[getCursorY()][getCursorX()]==80)&&(cells[getCursorY()][getCursorX()+1]==0||cells[getCursorY()][getCursorX()+1]==70||cells[getCursorY()][getCursorX()+1]==80)) {
         PImage tmp_img;
-        tmp_img = cells_img[getCursolY()][getCursolX()];
-        cells_img[getCursolY()][getCursolX()] = cells_img[getCursolY()][getCursolX() + 1];
-        cells_img[getCursolY()][getCursolX() + 1] = tmp_img;
+        tmp_img = cells_img[getCursorY()][getCursorX()];
+        cells_img[getCursorY()][getCursorX()] = cells_img[getCursorY()][getCursorX() + 1];
+        cells_img[getCursorY()][getCursorX() + 1] = tmp_img;
         int tmp_panel;
-        tmp_panel = cells_type[getCursolY()][getCursolX()];
-        cells_type[getCursolY()][getCursolX()] = cells_type[getCursolY()][getCursolX() + 1];
-        cells_type[getCursolY()][getCursolX() + 1] = tmp_panel;
-        cells_img[getCursolY()][getCursolX() + 1] = tmp_img;
+        tmp_panel = cells_type[getCursorY()][getCursorX()];
+        cells_type[getCursorY()][getCursorX()] = cells_type[getCursorY()][getCursorX() + 1];
+        cells_type[getCursorY()][getCursorX() + 1] = tmp_panel;
+        cells_img[getCursorY()][getCursorX() + 1] = tmp_img;
         int tmp_cell;
-        tmp_cell = cells[getCursolY()][getCursolX()];
-        cells[getCursolY()][getCursolX()] = cells[getCursolY()][getCursolX() + 1];
-        cells[getCursolY()][getCursolX() + 1] = tmp_cell;
+        tmp_cell = cells[getCursorY()][getCursorX()];
+        cells[getCursorY()][getCursorX()] = cells[getCursorY()][getCursorX() + 1];
+        cells[getCursorY()][getCursorX() + 1] = tmp_cell;
 
         manualflag=true;
         pcf = true;
       }
     }
-  }
-  else if(key=='2'&&DEBUG){
+  } else if (key=='2'&&DEBUG) {
     // 4秒経過したら消える
     // 連鎖用表示設定
     fill(0, 166, 212);
     textSize(100);
-    text(int(random(3,15)), MARGIN_X+PANEL_SIZE*7,MARGIN_Y+PANEL_SIZE);
-    
+    text(int(random(3, 15)), MARGIN_X+PANEL_SIZE*7, MARGIN_Y+PANEL_SIZE);
+
     // 同時消し用表示設定
     fill(255, 125, 0);
     textSize(100);
-    text(int(random(3,15)), MARGIN_X+PANEL_SIZE*7,MARGIN_Y+PANEL_SIZE);
-    
+    text(int(random(3, 15)), MARGIN_X+PANEL_SIZE*7, MARGIN_Y+PANEL_SIZE);
   }
 }
 
@@ -441,60 +533,114 @@ void placePanel() {
 }
 
 void generatePanel() {
-  int[] new_panel;
-  new_panel= new int[6];
-  for (int y = 12; y > 0; y--) {
-    for (int x = 0; x < 6; x++) {
-      // パネルの初期化 それぞれに空のパネルを配置
-      cells_img[y][x] = cells_img[y-1][x];
-      cells_type[y][x]=cells_type[y-1][x];
-      cells[y][x]=cells[y-1][x];
-      cells_chain[y][x]=cells_chain[y-1][x];
+  zerobonus=false;
+  for (int x=0; x<6; x++) {
+    if (cells_type[12][x]!=0&&cells_img[12][x]!=panels[0]) {
+      gameover=true;
+      println("Game Over");
     }
   }
-  for (int x=0; x<6; x++) {
-    new_panel[x]=(int)random(5)+1;
-    cells_img[0][x] =panels[new_panel[x]];
-    cells_type[0][x]=new_panel[x];
-    cells[0][x]=0;
-    cells_chain[0][x]=0;
+  if (!gameover) {
+    int[] new_panel;
+    new_panel= new int[6];
+    for (int y = 12; y > 0; y--) {
+      for (int x = 0; x < 6; x++) {
+        // パネルの初期化 それぞれに空のパネルを配置
+        cells_img[y][x] = cells_img[y-1][x];
+        cells_type[y][x]=cells_type[y-1][x];
+        cells[y][x]=cells[y-1][x];
+        cells_chain[y][x]=cells_chain[y-1][x];
+      }
+    }
+    for (int x=0; x<6; x++) {
+      new_panel[x]=(int)random(5)+1;
+      cells_img[0][x] =panels[new_panel[x]];
+      cells_type[0][x]=new_panel[x];
+      cells[0][x]=0;
+      cells_chain[0][x]=0;
+    }
   }
+}
+
+int getMaxPanelHeight() {
+  int c=0;
+  for (int x=0; x<=5; x++) {
+    for (int y=1; y<=12; y++) {
+      if (cells_img[y][x]!=panels[0]&&c<y) {
+        c=y;
+      }
+    }
+  }
+  return c;
 }
 
 int calculateScore(int chains, int combo) {
   int rtn=0;
   // 連鎖分だけ加算
   switch (chains) {
-  case 0:break;
-  case 1:break;
-  case 2:rtn+=50;break;
-  case 3:rtn+=80;break;
-  case 4:rtn+=150;break;
-  case 5:rtn+=300;break;
-  case 6:rtn+=400;break;
-  case 7:rtn+=500;break;
-  case 8:rtn+=700;break;
-  case 9:rtn+=900;break;
-  case 10:rtn+=1100;break;
-  case 11:rtn+=1300;break;
-  case 12:rtn+=1500;break;
-  default:rtn+=1800;break;
+  case 0:
+    break;
+  case 1:
+    break;
+  case 2:
+    rtn+=50;
+    break;
+  case 3:
+    rtn+=80;
+    break;
+  case 4:
+    rtn+=150;
+    break;
+  case 5:
+    rtn+=300;
+    break;
+  case 6:
+    rtn+=400;
+    break;
+  case 7:
+    rtn+=500;
+    break;
+  case 8:
+    rtn+=700;
+    break;
+  case 9:
+    rtn+=900;
+    break;
+  case 10:
+    rtn+=1100;
+    break;
+  case 11:
+    rtn+=1300;
+    break;
+  case 12:
+    rtn+=1500;
+    break;
+  default:
+    rtn+=1800;
+    break;
   }
 
   // 同時消しの分だけ加算
-  if (combo==3){
+  if (combo==3) {
     rtn+=30;
-  }else{
-  rtn+=5*(combo-3)*(combo+24);// -10*combo+10*combo;
+  } else {
+    rtn+=5*(combo-3)*(combo+24);// -10*combo+10*combo;
   }
 
   return rtn;
 }
 
-int getCursolX() {
+int getCursorX() {
   return cx / PANEL_SIZE - 1;
 }
 
-int getCursolY() {
+int getCursorY() {
   return (height - cy) / PANEL_SIZE;
+}
+
+void dispose() {
+  PrintWriter output=createWriter("endless");
+  output.println(highscore);
+  output.flush();
+  output.close();
 }
