@@ -1,6 +1,7 @@
 /// TODO:
-/// 同時消しのバグ　L字型(5)に消えない -> おそらく治った
+/// 落下の際のバグ　空中で判定してしまう
 /// 新しいパネル生成　よりよい乱数 -> 3つ連続で同じパネルが出現することもある。
+/// 縦のパネルの数に応じてステージの色を変える(縦10個:黄色、縦11個:オレンジ、縦12個:赤)
 /// 連鎖の判定
 /// せり上げボタンの配置を決める。
 /// スコアとタイム、ポーズ・リセット、開始前のカウントダウン
@@ -16,7 +17,7 @@
 ///       if 現在見ているパネルと2つ下のパネルが同じ
 ///         cells[y][x]==1, cells[y+1][x]==1, cells[y+2][x]==1
 ///
-/// 揃ったときの点滅6回
+ /// 揃ったときの点滅6回
 /// 点滅時にcellsの値を毎フレーム1増やす
 /// cellsが60くらいになったら消す
 /// 
@@ -107,7 +108,7 @@ int arrtime; // 揃ってから消すまでインクリメント
 
 void setup() {
   size(600, 900);
-  // background(230);
+  background(230);
   // background(#11cf55);
   frameRate(FRAME_RATE);
   strokeWeight(1);
@@ -126,9 +127,6 @@ void setup() {
   // panel4=loadImage("panel4.png");
   // panel5=loadImage("panel5.png");
   timer=0;
-  score=0;
-  frameCount=0;
-  zerobonus=false
   for (int y = 12; y >= 0; y--) {
     for (int x = 0; x < 6; x++) {
       // パネルの初期化 それぞれに空のパネルを配置
@@ -140,12 +138,6 @@ void setup() {
     for (int x = 0; x < 6; x++) {
       cells_img[y][x] = panels[(x + y) % 5 + 1];
       cells_type[y][x]=(x + y) % 5 + 1;
-      cells[y][x]=0;
-    }
-  }
-  for (int y = 12; y > 5; y--) {
-    for (int x = 0; x < 6; x++) {
-      cells[y][x]=70;
     }
   }
   try {
@@ -164,7 +156,7 @@ void draw() {
     startflag=true;
   }
   if (startflag&&timer==0) {
-    gameTimer=new Timer(timer, FRAME_RATE);
+    gameTimer=new Timer(timer, FRAME_RATE, 0, 1, 5);
     gameTimer.start();
   }
   if (gameover) {
@@ -202,30 +194,28 @@ void mousePressed() {
 }
 
 void stage() {
-  background(0);
+  background(230);
   fill(255);
-  for (int j = 0; j < 12; j++) { //<>//
+  for (int j = 0; j < 12; j++) {
     for (int i = 0; i < 6; i++) {
       // rect(MARGIN_X + PANEL_SIZE * i, MARGIN_Y + PANEL_SIZE * j, PANEL_SIZE, PANEL_SIZE);
     }
   }
   //   println("("+mouseX+", "+mouseY+")");
-  if (startflag) {
-    switch (getMaxPanelHeight()) {
-    case 10:
-      fill(255, 255, 0, 127);
-      break;
-    case 11:
-      fill(255, 140, 0, 127);      
-      break;
-    case 12:
-      fill(178, 34, 34, 127);    
-      break;
+  switch (getMaxPanelHeight()) {
+  case 10:
+    fill(255, 255, 0, 127);
+    break;
+  case 11:
+    fill(255, 140, 0, 127);      
+    break;
+  case 12:
+    fill(178, 34, 34, 127);    
+    break;
 
-    default:
-      fill(255);
-      break;
-    }
+  default:
+    fill(255);
+    break;
   }
   rect(MARGIN_X, MARGIN_Y, PANEL_SIZE*6, PANEL_SIZE*12);
   txt();
@@ -286,22 +276,13 @@ void checkPanel() {
     }
   }
   // 横で揃っているか
-  boolean judge=true; // 2枚以上のパネルが同時に落下するときに判定しないようにする
   for (int y=12; y>0; y--) {
     for (int x=0; x<4; x++) {
-      if (cells_type[y][x]!=0&&cells_img[y][x]==cells_img[y][x+1] && (cells[y][x]<=1||cells[y][x]==80)&& (cells[y][x+1]<=1||cells[y][x+1]==80)&&frameCount%FALL_SPEED_PER_FR==0) {
-        if (cells_img[y][x]==cells_img[y][x+2]&&(cells[y][x+2]<=1||cells[y][x+2]==80)&&frameCount%FALL_SPEED_PER_FR==0) {
-          for (int yy=y; yy>0; yy--) {
-            if ((cells[yy][x]==70||cells[yy][x+1]==70||cells[yy][x+2]==70)) {
-              judge=false;
-              break;
-            }
-          }
-          if (judge) {
-            cells[y][x]=1;
-            cells[y][x+1]=1;
-            cells[y][x+2]=1;
-          }
+      if (cells_type[y][x]!=0&&cells_img[y][x]==cells_img[y][x+1] && (cells[y][x]<=1||cells[y][x]==80)&& (cells[y][x+1]<=1||cells[y][x+1]==80&&frameCount%FALL_SPEED_PER_FR==0)) {
+        if (cells_img[y][x]==cells_img[y][x+2]&&(cells[y][x+2]<=1||cells[y][x+2]==80&&frameCount%FALL_SPEED_PER_FR==0)) {
+          cells[y][x]=1;
+          cells[y][x+1]=1;
+          cells[y][x+2]=1;
         }
       }
     }
@@ -309,7 +290,7 @@ void checkPanel() {
   // 縦で揃っているか
   for (int x=0; x<6; x++) {
     for (int y=12; y>2; y--) {
-      if (cells_type[y][x]!=0&&cells_img[y][x]==cells_img[y-1][x]&& (cells[y][x]<=1||cells[y][x]==80)&& (cells[y-1][x]<=1||cells[y-1][x]==80)&&frameCount%FALL_SPEED_PER_FR==0) {
+      if (cells_type[y][x]!=0&&cells_img[y][x]==cells_img[y-1][x]&& (cells[y][x]<=1||cells[y][x]==80)&& (cells[y-1][x]<=1||cells[y-1][x]==80&&frameCount%FALL_SPEED_PER_FR==0)) {
         if (cells_img[y][x]==cells_img[y-2][x]&& (cells[y-2][x]<=1||cells[y-2][x]==80&&frameCount%FALL_SPEED_PER_FR==0)) {
           cells[y][x]=1;
           cells[y-1][x]=1;
@@ -419,22 +400,15 @@ void checkPanel() {
   }
 
   // 全消し判定
-  fieldpanels=12*6;
+  fieldpanels=0;
   for (int y=12; y>0; y--) {
     for (int x=0; x<6; x++) {
       if (cells_img[y][x]==panels[0]&&cells_type[y][x]!=0&&!(0<cells[y][x]&&cells[y][x]<70)) {
         cells_type[y][x]=0;
       }
-      if (cells_img[y][x]==panels[0]&&cells_type[y][x]==0&&cells[y][x]==70) {
-        fieldpanels-=1;
+      if (cells_img[y][x]!=panels[0]) {
+        fieldpanels+=1;
       }
-
-      // if (cells_img[y][x]==panels[0]&&cells_type[y][x]!=0&&!(0<cells[y][x]&&cells[y][x]<70)) {
-      //   cells_type[y][x]=0;
-      // }
-      // if (cells_img[y][x]!=panels[0]&&cells_type[y][x]!=0&&cells[y][x]<70) {
-      //   fieldpanels+=1;
-      // }
       // if (chains==0&&(true)) {
       //   cells_chain[y][x]=0;
       // }
@@ -445,7 +419,7 @@ void checkPanel() {
     score+=3000;
   } else   if (zerobonus) {    
     fill(60, 179, 113);
-    textSize(90);
+    textSize(100);
     text(PERFECT_TEXT, MARGIN_X, MARGIN_Y+PANEL_SIZE*3);
   }
   // 後処理
@@ -537,13 +511,6 @@ void keyPressed() {
     textSize(100);
     text(int(random(3, 15)), MARGIN_X+PANEL_SIZE*7, MARGIN_Y+PANEL_SIZE);
   }
-  else if (key=='r'){
-    println("Reset");
-    setup();
-  }
-  else if(key=='s'){
-    saveFrame("Panel_de_Pon.png");
-  }
 }
 
 void keyReleased() {
@@ -600,7 +567,7 @@ int getMaxPanelHeight() {
   int c=0;
   for (int x=0; x<=5; x++) {
     for (int y=1; y<=12; y++) {
-      if ((cells[y][x]<70||cells[y][x]==80)&&c<y) {
+      if (cells[y][x]<70&&c<y) {
         c=y;
       }
     }

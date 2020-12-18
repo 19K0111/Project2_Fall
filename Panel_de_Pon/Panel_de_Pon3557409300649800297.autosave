@@ -1,6 +1,7 @@
 /// TODO:
-/// 同時消しのバグ　L字型(5)に消えない -> おそらく治った
+/// 同時消しのバグ　L字型(5)に消えない
 /// 新しいパネル生成　よりよい乱数 -> 3つ連続で同じパネルが出現することもある。
+/// 縦のパネルの数に応じてステージの色を変える(縦10個:黄色、縦11個:オレンジ、縦12個:赤)
 /// 連鎖の判定
 /// せり上げボタンの配置を決める。
 /// スコアとタイム、ポーズ・リセット、開始前のカウントダウン
@@ -107,7 +108,7 @@ int arrtime; // 揃ってから消すまでインクリメント
 
 void setup() {
   size(600, 900);
-  // background(230);
+  background(230);
   // background(#11cf55);
   frameRate(FRAME_RATE);
   strokeWeight(1);
@@ -126,9 +127,6 @@ void setup() {
   // panel4=loadImage("panel4.png");
   // panel5=loadImage("panel5.png");
   timer=0;
-  score=0;
-  frameCount=0;
-  zerobonus=false
   for (int y = 12; y >= 0; y--) {
     for (int x = 0; x < 6; x++) {
       // パネルの初期化 それぞれに空のパネルを配置
@@ -202,7 +200,7 @@ void mousePressed() {
 }
 
 void stage() {
-  background(0);
+  background(230);
   fill(255);
   for (int j = 0; j < 12; j++) { //<>//
     for (int i = 0; i < 6; i++) {
@@ -309,7 +307,7 @@ void checkPanel() {
   // 縦で揃っているか
   for (int x=0; x<6; x++) {
     for (int y=12; y>2; y--) {
-      if (cells_type[y][x]!=0&&cells_img[y][x]==cells_img[y-1][x]&& (cells[y][x]<=1||cells[y][x]==80)&& (cells[y-1][x]<=1||cells[y-1][x]==80)&&frameCount%FALL_SPEED_PER_FR==0) {
+      if (cells_type[y][x]!=0&&cells_img[y][x]==cells_img[y-1][x]&& (cells[y][x]<=1||cells[y][x]==80)&& (cells[y-1][x]<=1||cells[y-1][x]==80&&frameCount%FALL_SPEED_PER_FR==0)) {
         if (cells_img[y][x]==cells_img[y-2][x]&& (cells[y-2][x]<=1||cells[y-2][x]==80&&frameCount%FALL_SPEED_PER_FR==0)) {
           cells[y][x]=1;
           cells[y-1][x]=1;
@@ -536,13 +534,6 @@ void keyPressed() {
     fill(255, 125, 0);
     textSize(100);
     text(int(random(3, 15)), MARGIN_X+PANEL_SIZE*7, MARGIN_Y+PANEL_SIZE);
-  }
-  else if (key=='r'){
-    println("Reset");
-    setup();
-  }
-  else if(key=='s'){
-    saveFrame("Panel_de_Pon.png");
   }
 }
 
