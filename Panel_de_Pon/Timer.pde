@@ -4,6 +4,10 @@ class Timer {
   private int m;
   private int s;
   private int ms;
+  private int sh; // 開始時のhour
+  private int sm; // 開始時のminute
+  private int ss; // 開始時のsecond
+  private int sms; // 開始時のmillisecond
   private int sf; // 開始時のフレーム位置
   private int fps;
   private boolean countdown; 
@@ -17,6 +21,10 @@ class Timer {
     this.m=0;
     this.s=0;
     this.ms=0;
+    this.sh=0;
+    this.sm=0;
+    this.ss=0;
+    this.sms=0;
     this.sf=currentframe;
     this.fps=framerate;
     this.countdown=false;
@@ -28,6 +36,10 @@ class Timer {
     this.m=minute;
     this.s=second;
     this.ms=0;
+    this.sh=hour;
+    this.sm=minute;
+    this.ss=second;
+    this.sms=0;
     this.sf=currentframe;
     this.fps=framerate;
     this.countdown=true;
@@ -41,6 +53,21 @@ class Timer {
 
   public void stop() {
     flag=false;
+  }
+
+  public void reset(){
+          h=sh;
+          m=sm;
+          s=ss;
+          ms=sms;
+    
+  }
+
+  public boolean isTimeUp(){
+    if(countdown&&h==0&&m==0&&s==0&&ms==0){
+      return true;
+    }
+    return false;
   }
 
   public String toString() {
