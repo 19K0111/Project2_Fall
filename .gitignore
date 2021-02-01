@@ -3,3 +3,7 @@
 !/Panel_de_Pon/*.pde
 *.autosave
 
+/19K0111_Program.zip
+/Panel_de_Pon/application.windows32/
+/Panel_de_Pon/application.windows64/
+/Panel_de_Pon/readme.txt

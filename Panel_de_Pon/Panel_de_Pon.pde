@@ -9,6 +9,9 @@ final int FRAME_RATE=60;
 final boolean DEBUG =true;
 int FALL_SPEED_PER_FR=3; // 落下速度を決める
 final String PERFECT_TEXT="Perfect";
+final int TA_HOUR = 0;
+final int TA_MINUTE = 2;
+final int TA_SECOND = 0;
 PImage cursor;
 int cx;
 int cy;
@@ -44,6 +47,7 @@ boolean manualflag; // 手動でパネルを動かしたらtrue(連鎖の判定�
 boolean startflag=false;
 boolean gameover;
 boolean zerobonus;
+boolean menukey;
 
 int timer=0;
 int chains=0; // 連鎖
@@ -94,7 +98,7 @@ void keyReleased() {
   state.keyReleasedState();
 }
 
-void initialize(){
+void initialize() {
   // background(230);
   // background(#11cf55);
   frameRate(FRAME_RATE);
@@ -144,7 +148,7 @@ void initialize(){
   }
   for (int y = 12; y >= 0; y--) {
     for (int x = 0; x < 6; x++) {
-      if(cells_img[y][x]==panels[0]){
+      if (cells_img[y][x]==panels[0]) {
         cells[y][x]=70;
       }
     }

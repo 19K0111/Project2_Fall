@@ -14,9 +14,9 @@ public class MenuExtendState extends State {
     text(String.valueOf(mode), 150, 80);
     /*
     text("Panel de Pon", 110, 80);
-    textSize(40);
-    text(String.valueOf(mode), 150, 130);
-    */
+     textSize(40);
+     text(String.valueOf(mode), 150, 130);
+     */
 
     textAlign(CENTER, CENTER);
     rectMode(CENTER);
@@ -55,33 +55,63 @@ public class MenuExtendState extends State {
     }
   }
   State decideState() {
-      switch (gamelv) {
-          case Easy:
-          frameCount=0;
-              state=new GameState();
-              break;
-          case Normal:
-          frameCount=0;
-              state=new GameState();              
-              break;
-          case Hard:
-          frameCount=0;
-              state=new GameState();         
-              break;
-          case IDLE:
-          gamelv=GAMELEVEL.IDLE;
-          break;
-          case BACK:
-          mode=GAMEMODE.BACK;
-          gamelv=GAMELEVEL.IDLE;
-          state=new MenuState();
-          break;
-      
-          default:
-              break;
-      }
+    switch (gamelv) {
+    case Easy:
+      frameCount=0;
+      state=new GameState();
+      break;
+    case Normal:
+      frameCount=0;
+      state=new GameState();              
+      break;
+    case Hard:
+      frameCount=0;
+      state=new GameState();         
+      break;
+    case IDLE:
+      gamelv=GAMELEVEL.IDLE;
+      break;
+    case BACK:
+      mode=GAMEMODE.BACK;
+      gamelv=GAMELEVEL.IDLE;
+      state=new MenuState();
+      break;
+
+    default:
+      break;
+    }
 
     return state;
+  }
+
+  void keyPressedState() {
+    if (key=='e' && !menukey) {
+      menukey=true;
+      gamelv=GAMELEVEL.Easy;
+      FALL_SPEED_PER_FR=9;
+    } else if (key=='n' && !menukey) {
+      menukey=true;
+      gamelv=GAMELEVEL.Normal;
+      FALL_SPEED_PER_FR=6;
+    } else if (key=='h' && !menukey) {
+      menukey=true;
+      gamelv=GAMELEVEL.Hard;
+      FALL_SPEED_PER_FR=3;
+    } else if (key=='b' && !menukey) {
+      menukey=false;
+      gamelv=GAMELEVEL.BACK;
+    }
+  }
+  void keyReleasedState() {
+    if (key=='e' && menukey) {
+      menukey=false;
+    } else if (key=='n' && menukey) {
+      menukey=false;
+    } else if (key=='h' && menukey) {
+      menukey=false;
+    } else if (key=='b' && menukey) {
+      menukey=false;
+    }
   }
 }
 
@@ -89,17 +119,17 @@ public enum GAMEMODE {
   Endless, 
     TimeAttack, 
     Puzzle, 
-    VSCom,
+    VSCom, 
 
-    IDLE,
+    IDLE, 
     BACK
 }
 
-public enum GAMELEVEL{
-    Easy,
-    Normal,
-    Hard,
+public enum GAMELEVEL {
+  Easy, 
+    Normal, 
+    Hard, 
 
-    IDLE,
+    IDLE, 
     BACK
 }

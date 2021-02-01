@@ -1,5 +1,5 @@
 class Timer {
-    // millis()はプレイ中に時刻を変えるとバグ
+  // millis()はプレイ中に時刻を変えるとバグ
   private int h;
   private int m;
   private int s;
@@ -55,16 +55,15 @@ class Timer {
     flag=false;
   }
 
-  public void reset(){
-          h=sh;
-          m=sm;
-          s=ss;
-          ms=sms;
-    
+  public void reset() {
+    h=sh;
+    m=sm;
+    s=ss;
+    ms=sms;
   }
 
-  public boolean isTimeUp(){
-    if(countdown&&h==0&&m==0&&s==0&&ms==0){
+  public boolean isTimeUp() {
+    if (countdown&&h==0&&m==0&&s==0&&ms==0) {
       return true;
     }
     return false;
@@ -94,8 +93,7 @@ class Timer {
         s=(((frameCount-sf)*1000/fps-sf)/1000)%60;// second()-s;
         ms=(((frameCount-sf)*1000/fps-sf))%1000;
       }
-    }else{
-        
+    } else {
     }
     return h+":"+String.format("%02d", m)+"\'"+String.format("%02d", s)+"\'\'"+String.format("%03d", ms);
   }
