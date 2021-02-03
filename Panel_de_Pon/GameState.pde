@@ -174,6 +174,23 @@ public class GameState extends State {
     textAlign(LEFT, BASELINE);
     rectMode(CORNER);
     stage();
+    
+    if(cooldown>0){
+    cooldown--;
+    }
+    if(startflag&&seriagetimer%((21-speedLv))==0&&cooldown==0){
+      seriagebar++;
+      if(seriagebar>100){
+        seriage();
+        seriagebar=0;
+      }
+    }
+    // せり上げバー描画
+    if(!gameover){
+    fill(255,165,0);
+    // rect(MARGIN_X, MARGIN_Y-5, ((float)frameCount/21%PANEL_SIZE*6),5);
+    rect(MARGIN_X, MARGIN_Y-5, ((float)seriagebar/100*PANEL_SIZE*6),5);
+    }
     // startflag=false;
     if (frameCount>FRAME_RATE*3&&!startflag) {
       startflag=true;
@@ -229,6 +246,7 @@ public class GameState extends State {
     if (startflag) {
       checkPanel();
       timer+=1;
+      seriagetimer+=1;
       // println(gameTimer.toString());
       // h=hour();
       // m=minute();
@@ -257,6 +275,7 @@ public class GameState extends State {
       println("Back");
       gamelv=GAMELEVEL.IDLE;
     }
+
   }
 
   void mousePressedState() {
@@ -404,6 +423,22 @@ public class GameState extends State {
         // 揃ったパネルの数を数える
         if (cells[y][x]==1) {
           combo+=1;
+          ep+=1;
+          // せり上げ関連の処理
+          if(speedLv<15){
+            if (ep>15){
+              ep=0;
+              speedLv+=1;
+            }
+          }else if(speedLv<20){
+            if(ep>speedLv){
+              ep=0;
+              speedLv+=1;              
+            }
+          }else{
+            ep=0;
+          }
+
           // if (!manualflag) {
           if (ccf) {
             cells_chain[y][x]=chains;
@@ -548,11 +583,15 @@ public class GameState extends State {
       if (highscore<score) {
         highscore=score;
       }
+      if(cooldown<2*FRAME_RATE){
+        cooldown=2*FRAME_RATE;
+      }
       if (combo>3) {
         dispTimer=new Timer(timer, FRAME_RATE, 0, 0, 4);
         dispTimer.start();
         dispFlag=true;
         dispNum=combo;
+        cooldown=5*FRAME_RATE;
       }
       println(chains+"連鎖 "+combo+"同時消し");
     }
@@ -579,15 +618,8 @@ public class GameState extends State {
         }
       } else if (keyCode==CONTROL) {
         if (!pcf&&startflag) {
-          // パネルのせり上げ
-          generatePanel();
-          if (getMaxPanelHeight()!=12&&!gameover) {
-            if (cy>=MARGIN_Y) {
-              cy-=PANEL_SIZE;
-            }
-            manualflag=true;
-            pcf=true;
-          }
+          seriage();
+          pcf=true;
         }
       }
     } else if (key == ENTER || key == ' ') {
@@ -657,6 +689,19 @@ public class GameState extends State {
         image(cells_img[y][x], MARGIN_X + PANEL_SIZE * x, MARGIN_Y + PANEL_SIZE * (12 - y), PANEL_SIZE, PANEL_SIZE);
       }
     }
+  }
+
+  void seriage(){    
+          // パネルのせり上げ
+          generatePanel();
+          seriagebar=0;
+          cooldown=0;
+          if (/*getMaxPanelHeight()!=12&&*/!gameover) {
+            if (cy>=MARGIN_Y) {
+              cy-=PANEL_SIZE;
+            }
+            manualflag=true;
+          }
   }
 
   void generatePanel() {

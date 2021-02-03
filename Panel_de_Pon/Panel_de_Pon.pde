@@ -69,6 +69,10 @@ SE se;
 int ready_cnt;
 
 int speedLv=1;
+int seriagebar=0;
+int cooldown=0;//5*FRAME_RATE;
+int seriagetimer=0;
+int ep=0; // erased panel
 
 int arrtime; // 揃ってから消すまでインクリメント
 
@@ -132,6 +136,11 @@ void initialize() {
   se=new SE();
   ready_cnt=3;
   speedLv=1;
+  seriagebar=0;
+  cooldown=0;
+  seriagetimer=0;
+  ep=0;
+
   for (int y = 12; y >= 0; y--) {
     for (int x = 0; x < 6; x++) {
       // パネルの初期化 それぞれに空のパネルを配置
