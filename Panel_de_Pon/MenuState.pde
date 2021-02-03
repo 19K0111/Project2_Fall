@@ -14,9 +14,9 @@ class MenuState extends State {
 
     textAlign(CENTER, CENTER);
     rectMode(CENTER);
-    el_button=new Button(width/4, 200, 200, 80, color(240, 100, 55), "Endless");
-    ta_button=new Button(width/4, 600, 200, 80, color(240, 100, 55), "Time Attack");
-    pz_button=new Button(width/4, 400, 200, 80, color(240, 100, 55), "Puzzle");
+    el_button = new Button(width / 4, 200, 200, 80, color(240, 100, 55), "Endless");
+    ta_button = new Button(width / 4, 600, 200, 80, color(240, 100, 55), "Time Attack");
+    pz_button = new Button(width / 4, 400, 200, 80, color(240, 100, 55), "Puzzle");
     // el_button=new Button(width/2, 200,200,80,color(240,100,55),"Endless");
 
 
@@ -26,11 +26,11 @@ class MenuState extends State {
 
     if (el_button.isPush()) {
       println("Endless");
-      mode=GAMEMODE.Endless;
+      mode = GAMEMODE.Endless;
     }
     if (ta_button.isPush()) {
       println("Time Attack");
-      mode=GAMEMODE.TimeAttack;
+      mode = GAMEMODE.TimeAttack;
     }
   }
 
@@ -38,27 +38,27 @@ class MenuState extends State {
     switch (mode) {
     case Endless:
       try {
-        highscore=int(loadStrings(String.valueOf(mode))[0]);
-      } 
+        highscore = int(loadStrings(String.valueOf(mode))[0]);
+      }
       catch (Exception e) {
         //TODO: handle exception
         println(e);
-        highscore=0;
+        highscore = 0;
       }
-      state=new MenuExtendState();
+      state = new MenuExtendState();
       break;
       // return state;
     case TimeAttack:
       try {
-        highscore=int(loadStrings(String.valueOf(mode))[0]);
-      } 
+        highscore = int(loadStrings(String.valueOf(mode))[0]);
+      }
       catch (Exception e) {
         //TODO: handle exception
         println(e);
-        highscore=0;
+        highscore = 0;
       }
-      state=new MenuExtendState();
-      break;  
+      state = new MenuExtendState();
+      break;
       // return state;
     case Puzzle:
 
@@ -78,12 +78,12 @@ class MenuState extends State {
   }
 
   void keyPressedState() {
-    if (key=='e' && !menukey) {
-      menukey=true;
-      mode=GAMEMODE.Endless;
-    } else if (key=='t' && !menukey) {
-      menukey=true;
-      mode=GAMEMODE.TimeAttack;
+    if (key == 'e' && !menukey) {
+      menukey = true;
+      mode = GAMEMODE.Endless;
+    } else if (key == 't' && !menukey) {
+      menukey = true;
+      mode = GAMEMODE.TimeAttack;
     }  /*
       else if(key=='p' && !menukey){
      menukey=true;
@@ -91,20 +91,20 @@ class MenuState extends State {
      }  else if(key=='c' && !menukey){
      menukey=true;
      mode=GAMEMODE.VSCom;
-     } 
+     }
      */
   }
   void keyReleasedState() {
-    if (key=='e' && menukey) {
-      menukey=false;
-    } else if (key=='t' && menukey) {
-      menukey=false;
-    }/* 
+    if (key == 'e' && menukey) {
+      menukey = false;
+    } else if (key == 't' && menukey) {
+      menukey = false;
+    }/*
      else if(key=='p' && menukey){
      menukey=false;
      } else if(key=='c' && menukey){
      menukey=false;
-     } 
+     }
      */
   }
 }

@@ -12,16 +12,16 @@ class Button {
   String str;
 
   Button(float x, float y, float sizeX, float sizeY, color baseCol, String str) {
-    this.x=x;
-    this.y=y;
-    this.sizeX=sizeX;
-    this.sizeY=sizeY;
-    this.baseCol=baseCol;
-    this.str=str;
+    this.x = x;
+    this.y = y;
+    this.sizeX = sizeX;
+    this.sizeY = sizeY;
+    this.baseCol = baseCol;
+    this.str = str;
 
-    nb=1; //normalBrightness
-    sb=0.8; //selectBrightness
-    pb=0.6; //pushBrightness
+    nb = 1; //normalBrightness
+    sb = 0.8; //selectBrightness
+    pb = 0.6; //pushBrightness
   }
 
   void run() {
@@ -40,12 +40,12 @@ class Button {
   }
 
   void rogic() {
-    state=checkState();
+    state = checkState();
   }
 
   //===================================================================
   boolean isPush() {
-    if (checkState()==2) return true;
+    if (checkState() == 2) return true;
     return false;
   }
 
@@ -56,8 +56,8 @@ class Button {
   }
 
   boolean checkInMouse() {
-    if (mouseX>x-sizeX/2&&mouseX<x+sizeX/2) {
-      if (mouseY>y-sizeY/2&&mouseY<y+sizeY/2) {
+    if (mouseX > x - sizeX / 2 && mouseX < x + sizeX / 2) {
+      if (mouseY > y - sizeY / 2 && mouseY < y + sizeY / 2) {
         return true;
       }
     }
@@ -65,17 +65,17 @@ class Button {
   }
 
   void changeColor() {
-    switch(state) {
+    switch (state) {
     case 0:
-      fill(hue(baseCol), saturation(baseCol), brightness(baseCol)*nb);
+      fill(hue(baseCol), saturation(baseCol), brightness(baseCol) * nb);
       break;
 
     case 1:
-      fill(hue(baseCol), saturation(baseCol), brightness(baseCol)*sb);
+      fill(hue(baseCol), saturation(baseCol), brightness(baseCol) * sb);
       break;
 
     case 2:
-      fill(hue(baseCol), saturation(baseCol), brightness(baseCol)*pb);
+      fill(hue(baseCol), saturation(baseCol), brightness(baseCol) * pb);
       break;
 
     default:
