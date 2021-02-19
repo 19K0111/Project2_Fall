@@ -257,8 +257,13 @@ public class GameState extends State {
     }
     if (dispFlag) {
       if (!dispTimer.isTimeUp()) {
-        // 同時消し用表示設定
-        fill(255, 125, 0);
+        if (ischain){
+          // 連鎖用表示設定
+          fill(0, 166, 212);
+        } else {
+          // 同時消し用表示設定
+          fill(255, 125, 0);
+        }
         textSize(100);
         text(dispNum, MARGIN_X + PANEL_SIZE * 7, MARGIN_Y + PANEL_SIZE);
         dispTimer.toString();
@@ -284,11 +289,11 @@ public class GameState extends State {
         int panelX, panelY;
         panelX = (mouseX - MARGIN_X) / PANEL_SIZE;
         panelY = 12 - (mouseY - MARGIN_Y) / PANEL_SIZE;
-        println("(" + panelX + ", " + panelY + ")");
+        println("(" + panelX + ", " + panelY + "), cells_type[" + panelY + "][" + panelX + "] = " + cells_type[panelY][panelX]);
         // println("cells_img["+panelY+"]["+panelX+"] = "+cells_img[panelY][panelX]);
-        println("cells_type[" + panelY + "][" + panelX + "] = " + cells_type[panelY][panelX]);
         println("cells[" + panelY + "][" + panelX + "] = " + cells[panelY][panelX]);
-        println("cells_chain[" + panelY + "][" + panelX + "] = " + cells_chain[panelY][panelX] + "\n");
+        println("cells_chain[" + panelY + "][" + panelX + "] = " + cells_chain[panelY][panelX] + ", chain = " + chains);
+        println("isDeleting: " + isDeleting + ", chainkeeper: " + chainkeeper + ", fallflag: " + fallflag);
       }
     }
   }
@@ -343,6 +348,7 @@ public class GameState extends State {
   }
 
   void checkPanel() {
+    boolean chaincombo = false; // 同時消しを含む連鎖
     for (int y = 1; y < 12; y++) {
       for (int x = 0; x < 6; x++) {
         if (cells_img[y][x] == panels[0] && !(0 < cells[y][x] && cells[y][x] < 70)) {
@@ -351,6 +357,40 @@ public class GameState extends State {
         }
       }
     }
+
+    // /* boolean */fallflag = false;
+    boolean loopflag = true;
+    for (int x = 0; x < 6; x++) {
+      for (int y = 1; y <= 11; y++) {
+        if (cells[y][x] == 70 && cells_type[y][x] == 0 && cells[y + 1][x] != 70 && cells_type[y + 1][x] != 0) {
+          fallflag = true;
+          loopflag = false;
+          break;
+        } else if (x == 5 && y == 11 && loopflag){
+          // fallflag = false;
+        }
+      }
+      if (!loopflag) {
+        break;
+      }
+    }
+
+    // for (int x = 0; x < 6; x++) {
+    //   for (int y = 1; y <= 12; y++) {
+    //     // 揃ったパネルから上を連鎖可能性リストに
+    //     if (cells[y][x] == 70) {
+    //       fallflag = true;
+    //     }
+    //     // if(!ccf){
+    //     //   ccf=true;
+    //     //   chains+=1;
+    //     // }
+    //     if (fallflag) {
+    //       cells_chain[y][x] = chains + 1;
+    //     }
+    //   }
+    // }
+
     for (int y = 1; y < 12; y++) {
       for (int x = 0; x < 6; x++) {
         // 落下 
@@ -372,6 +412,7 @@ public class GameState extends State {
             if ((cells[y - 1][x] <= 60 || cells[y - 1][x] == 80) && cells_img[y][x] != panels[0] && (cells[y][x] == 70)) {
               cells[y][x] = 80; // 落下し終わった
             }
+            // fallflag = true;
             tmp_cell_img = null;
           }
         }
@@ -398,6 +439,21 @@ public class GameState extends State {
               cells[y][x] = 1;
               cells[y][x + 1] = 1;
               cells[y][x + 2] = 1;
+              if (!chaincombo && fallflag /*&& !manualflag*/){
+                println("横連鎖");
+                chains += 1;
+                chainkeeper = true;
+                chaincombo = true;
+              }
+              manualflag = false;
+              cells_chain[y][x] = chains;
+              cells_chain[y][x + 1] = chains;
+              cells_chain[y][x + 2] = chains;
+              for (int yy = y; yy <= 12; yy++) {
+                cells_chain[yy][x] = chains;
+                cells_chain[yy][x + 1] = chains;
+                cells_chain[yy][x + 2] = chains;                
+              }
             }
           }
         }
@@ -411,13 +467,45 @@ public class GameState extends State {
             cells[y][x] = 1;
             cells[y - 1][x] = 1;
             cells[y - 2][x] = 1;
+            if (!chaincombo && fallflag /*&& !manualflag*/){
+              println("縦連鎖");
+              chains += 1;
+              chainkeeper = true;
+              chaincombo = true;
+            }
+            manualflag = false;
+            cells_chain[y][x] = chains;
+            cells_chain[y - 1][x] = chains;
+            cells_chain[y - 2][x] = chains;
+            for (int yy = y; yy <= 12; yy++) {
+              cells_chain[yy][x] = chains;
+              cells_chain[yy][x] = chains;
+              cells_chain[yy][x] = chains;                
+            }
           }
         }
+      }
+    }
+    
+    loopflag = true;
+    for (int x = 0; x < 6; x++) {
+      for (int y = 1; y <= 11; y++) {
+        if (cells[y][x] == 70 && cells_type[y][x] == 0 && cells[y + 1][x] != 70 && cells_type[y + 1][x] != 0) {
+          fallflag = true;
+          loopflag = false;
+          break;
+        } else if (x == 5 && y == 11 && loopflag){
+          fallflag = false;
+        }
+      }
+      if (!loopflag) {
+        break;
       }
     }
 
     int combo = 0;
     ccf = false;
+    loopflag = true;
     for (int y = 12; y > 0; y--) {
       for (int x = 0; x < 6; x++) {
         // 揃ったパネルの数を数える
@@ -440,13 +528,13 @@ public class GameState extends State {
           }
 
           // if (!manualflag) {
-          if (ccf) {
-            cells_chain[y][x] = chains;
-          } else {
-            cells_chain[y][x] = chains + 1;
-            chains = cells_chain[y][x];
-            ccf = true;
-          }
+          // if (ccf) {
+          //   cells_chain[y][x] = chains;
+          // } else {
+          //   cells_chain[y][x] = chains + 1;
+          //   chains = cells_chain[y][x];
+          //   ccf = true;
+          // }
           // }
         }
         // 揃ったときの時間猶予　点滅エフェクト向け
@@ -465,36 +553,37 @@ public class GameState extends State {
             // println("60の倍数");
             cells[y][x] = 70;
           }
+          isDeleting = true;
+          loopflag = false;
+        } else {
+          if (x == 5 && y == 1 && loopflag) {
+            isDeleting = false;
+          }
         }
       }
     }
-    for (int x = 0; x < 6; x++) {
-      boolean fallflag = false;
-      for (int y = 1; y <= 12; y++) {
-        // 揃ったパネルから上を連鎖可能性リストに
-        if (cells[y][x] == 70) {
-          fallflag = true;
-        }
-        // if(!ccf){
-        //   ccf=true;
-        //   chains+=1;
-        // }
-        if (fallflag) {
-          cells_chain[y][x] = chains + 1;
-        }
-      }
-    }
-
     if (combo == 0) {
       // 消えるパネルがないとき、
-      boolean isDeleting = false;
+      // boolean isDeleting = false;
+      loopflag = true;
       for (int y = 1; y <= 12; y++) {
         for (int x = 0; x < 6; x++) {
           // パネルが消えてる途中か落下中か
-          if ((0 < cells[y][x] && cells[y][x] < 70) || cells[y][x] == 80) {
+          if ((0 < cells[y][x] && cells[y][x] < 70)/* || cells[y][x] == 80*/) {
             isDeleting = true;
+            loopflag = false;
+            // println("deleting: ("+x+", "+y+")");
             break;
-          } else {
+          } //else {
+            if (x == 5 && y == 12 && loopflag) {
+        if (!fallflag && !isDeleting /*&& chainkeeper && chains < 2*/){
+          // println("途切れる"+ chains);
+          chains = 1;
+          chainkeeper = false;
+        }
+              // chains = 0;
+              isDeleting = false;
+            //}
           }
           // if (chains>0) {
           // }
@@ -504,13 +593,8 @@ public class GameState extends State {
           // if(cells[y][x]==70 && cells_type[y][x]==0){
           //   cells[y][x]=0;
           // }
-          if (x == 5 && y == 12) {
-            chains = 0;
-            isDeleting = false;
-          }
         }
         if (isDeleting) {
-          // println("途切れる"+y);
           break;
         }
       }
@@ -590,8 +674,15 @@ public class GameState extends State {
         dispTimer = new Timer(timer, FRAME_RATE, 0, 0, 4);
         dispTimer.start();
         dispFlag = true;
-        dispNum = combo;
+        ischain = chains >= 2 && combo < 15 ? true : false;
+        dispNum = chains >= 2 && combo < 15 ? chains : combo;
         cooldown = 5 * FRAME_RATE;
+      } else if (chains >= 2){
+        dispTimer = new Timer(timer, FRAME_RATE, 0, 0, 4);
+        dispTimer.start();
+        dispFlag = true;
+        ischain = chains >= 2 && combo < 15 ? true : false;
+        dispNum = chains >= 2 && combo < 15 ? chains : combo;        
       }
       println(chains + "連鎖 " + combo + "同時消し");
     }
@@ -700,7 +791,7 @@ public class GameState extends State {
       if (cy >= MARGIN_Y) {
         cy -= PANEL_SIZE;
       }
-      manualflag = true;
+      // manualflag = true;
     }
   }
 
@@ -741,7 +832,7 @@ public class GameState extends State {
         cells_img[0][x] = panels[new_panel[x]];
         cells_type[0][x] = new_panel[x];
         cells[0][x] = 0;
-        cells_chain[0][x] = 0;
+        // cells_chain[0][x] = 0;
       }
     }
   }

@@ -48,6 +48,10 @@ boolean startflag = false;
 boolean gameover;
 boolean zerobonus;
 boolean menukey;
+boolean chainkeeper;
+boolean isDeleting;
+boolean fallflag;
+boolean ischain;
 
 int timer = 0;
 int chains = 0; // 連鎖
@@ -124,15 +128,21 @@ void initialize() {
   cx = MARGIN_X - 5 + PANEL_SIZE * 2;
   cy = MARGIN_Y - 5 + PANEL_SIZE * 6;
   timer = 0;
+  chains = 1;
   score = 0;
   h = 0;
   m = 0;
   s = 0;
   frameCount = 0;
+  manualflag = false;
   startflag = false;
   gameover = false;
   zerobonus = false;
   dispFlag = false;
+  chainkeeper = false;
+  isDeleting = false;
+  fallflag = false;
+  ischain = false;
   se = new SE();
   ready_cnt = 3;
   speedLv = 1;
@@ -146,6 +156,8 @@ void initialize() {
       // パネルの初期化 それぞれに空のパネルを配置
       cells_img[y][x] = panels[0];
       cells_type[y][x] = 0;
+      cells_chain[y][x] = 1;
+      cells[y][x] = 0;
     }
   }
   for (int y = 5; y >= 0; y--) {
@@ -155,6 +167,7 @@ void initialize() {
       cells[y][x] = 0;
     }
   }
+  // chainworktest();
   for (int y = 12; y >= 0; y--) {
     for (int x = 0; x < 6; x++) {
       if (cells_img[y][x] == panels[0]) {
